@@ -12,7 +12,8 @@ entity manchester_dec is
     data   : out std_logic_vector(15 downto 0);
     is_cmd : out std_logic;  -- '1' = command/status sync, '0' = data sync
     perr   : out std_logic;  -- parity error
-    merr   : out std_logic   -- Manchester error (no mid-bit transition)
+    merr   : out std_logic;  -- Manchester error (no mid-bit transition)
+    active : out std_logic   -- bus is not idle
   );
 end entity;
 
@@ -53,6 +54,8 @@ begin
       lvl_prev <= lvl;
     end if;
   end process;
+
+  active <= '0' when lvl = "00" else '1';
 
   dec_proc : process (clk)
     variable bad : std_logic;
