@@ -3,3 +3,8 @@ sim_build/
 results.xml
 __pycache__/
 *.ghw
+syn/*.log
+syn/*.jou
+syn/.Xil/
+syn/clockInfo.txt
+syn/*.dcp

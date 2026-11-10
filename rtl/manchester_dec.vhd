@@ -31,6 +31,8 @@ architecture rtl of manchester_dec is
   signal state : state_t := HUNT;
 
   signal p_meta, p_s, n_meta, n_s : std_logic := '0';
+  attribute ASYNC_REG : string;
+  attribute ASYNC_REG of p_meta, p_s, n_meta, n_s : signal is "TRUE";  -- keep synchronizer flops together
   signal lvl, lvl_prev : lvl_t := "00";
   signal run      : natural range 0 to RUN_SAT := 0;
   signal ct       : natural range 0 to 3 * H := 0;

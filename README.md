@@ -2,7 +2,7 @@
 
 ![tests](https://github.com/alberto-hdz/mil1553-rt/actions/workflows/tests.yml/badge.svg)
 
-MIL-STD-1553B is the command/response data bus used in military aircraft avionics: a bus controller (BC) sends commands at 1 Mbps and remote terminals (RTs) answer with a status word and data. This repo is my VHDL implementation of a 1553B **remote terminal**, verified in simulation with a Python/cocotb bus controller model.
+MIL-STD-1553B is the command/response data bus used in military aircraft avionics: a bus controller (BC) sends commands at 1 Mbps and remote terminals (RTs) answer with a status word and data. This repo is my VHDL implementation of a 1553B **remote terminal**, verified in simulation with a Python/cocotb bus controller model and implemented on a Xilinx Artix-7.
 
 ## Architecture
 
@@ -23,9 +23,10 @@ The bus pins are two-wire (positive / negative / both low = idle), matching the 
 | `rtl/manchester_dec.vhd` | Two-flop synchronizer, run-length sync detection, half-bit sampling timed from the mid-sync edge, parity and Manchester error flags. |
 | `rtl/rt_core.vhd` | RT protocol state machine. |
 | `rtl/subaddr_ram.vhd` | Receive/transmit data buffer. |
-| `rtl/rt_top.vhd` | Top level. Generics: `RT_ADDR` (0–30), `CLKS_PER_HALF` (25 at 50 MHz). |
+| `rtl/rt_top.vhd` | Top level. Generics: `RT_ADDR` (0–30), `CLKS_PER_HALF` (25 at 50 MHz, 50 at 100 MHz). |
 | `model/m1553.py` | Bit-true Python reference model (word encode/decode, parity, command word). |
 | `tb/cocotb/` | cocotb testbenches and the bus controller model (`bc.py`). |
+| `syn/` | Vivado non-project build script, constraints, and post-route reports. |
 
 ## Supported
 
@@ -69,6 +70,27 @@ All testbenches are cocotb (Python) running on GHDL. Every run uses a new random
 - **Timing recovery.** Each word is timed from its own mid-sync edge. A 0.1% rate error over one 20 µs word is only 20 ns, well inside the 250 ns sampling margin, so re-timing on every bit is not needed.
 - **Contiguous words.** Integration testing showed my first encoder left a one-clock idle gap between words. I added a one-word holding register so the next word starts the same clock the previous one ends, and added `test_back_to_back` to keep it fixed.
 - **Too many words.** The RT knows how many words to expect. If the bus is still active 0.5 µs into the response gap, the BC is still sending, so the RT sets Message Error and stays silent.
+
+## FPGA implementation
+
+Vivado 2024.2, Artix-7 `xc7a200tfbg484-1`, 100 MHz clock (`CLKS_PER_HALF = 50`), post-route:
+
+| Resource | Used |
+|---|---|
+| Slice LUTs | 197 |
+| Slice registers | 255 |
+| Block RAM | 1 RAMB18 (0.5 tile) |
+| DSP48 | 0 |
+
+| Timing | Result |
+|---|---|
+| WNS (setup) | +4.539 ns (critical path about 5.5 ns) |
+| WHS (hold) | +0.059 ns |
+| Failing endpoints | 0 of 544 |
+
+The bus inputs are asynchronous to the system clock, so they go through two-flop synchronizers marked `ASYNC_REG` and are false-pathed in `syn/rt_top.xdc`. Full reports are in `syn/reports/`.
+
+To rebuild, run this from `syn/`: `vivado -mode batch -source build.tcl`
 
 ## Running the tests
 
