@@ -1,3 +1,8 @@
+-- rt_core.vhd
+-- Protocol side of the remote terminal. Decodes commands for my address (or
+-- broadcast), stores received data, waits the response gap, sends the status
+-- word and any requested data, and sets Message Error when a message is bad.
+
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
@@ -52,7 +57,7 @@ architecture rtl of rt_core is
   signal me         : std_logic := '0';  -- Message Error status bit
   signal bcr        : std_logic := '0';  -- Broadcast Command Received status bit
   signal last_cmd   : std_logic_vector(15 downto 0) := (others => '0');
-  signal push_r     : std_logic := '0';
+  signal push_r     : std_logic := '0';  -- my registered copy of e_push
   signal status     : std_logic_vector(15 downto 0);
 begin
   -- status word: address, ME, instrumentation, service request, 3 reserved,
@@ -177,6 +182,7 @@ begin
             end if;
 
           when GAP =>
+            -- skip the first half bit so the tail of the last word isn't counted as activity
             if (timer > H and d_active = '1') or d_valid = '1' then
               me    <= '1';                    -- bus still busy: too many words
               state <= IDLE;
@@ -199,6 +205,7 @@ begin
             end if;
 
           when TX_LAST =>
+            -- e_full lags my push by a clock, so I also wait for push_r to clear
             if e_full = '0' and push_r = '0' then
               e_data <= last_cmd;
               e_cmd  <= '0';
@@ -227,8 +234,10 @@ begin
             end if;
 
           when TX_DONE =>
+            -- wait for the last word to finish before going back to idle
             if e_busy = '0' and push_r = '0' then
               if reset_pend = '1' then
+                -- reset RT mode code: answer first, then clear the status bits
                 me         <= '0';
                 bcr        <= '0';
                 reset_pend <= '0';

@@ -8,3 +8,4 @@ syn/*.jou
 syn/.Xil/
 syn/clockInfo.txt
 syn/*.dcp
+docs/waveform.json

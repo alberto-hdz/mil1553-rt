@@ -1,8 +1,11 @@
+-- subaddr_ram.vhd
+-- Data buffer for the RT: 32 subaddresses x 32 words x 16 bits. Written so
+-- Vivado infers a single RAMB18 (read-first, one clock read latency).
+
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
--- 32 subaddresses x 32 words x 16 bits = one 18Kb block RAM
 entity subaddr_ram is
   port (
     clk  : in  std_logic;

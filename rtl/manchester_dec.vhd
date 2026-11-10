@@ -1,3 +1,8 @@
+-- manchester_dec.vhd
+-- Manchester II decoder for my 1553 RT. Finds the sync by how long the bus
+-- holds one level, then samples the middle of every half bit and checks
+-- parity and the mid-bit transition. Each word is timed from its own sync.
+
 library ieee;
 use ieee.std_logic_1164.all;
 
@@ -21,7 +26,7 @@ architecture rtl of manchester_dec is
   constant H        : natural := CLKS_PER_HALF;
   constant SYNC_MIN : natural := (5 * H) / 2;  -- 1.25 us: longer than any run inside a word (1.0 us)
   constant SYNC_MAX : natural := 5 * H;        -- 2.5 us: covers a sync half merged with the previous parity half
-  constant RUN_SAT  : natural := 6 * H;
+  constant RUN_SAT  : natural := 6 * H;        -- run counter stops here so it can't wrap
 
   subtype lvl_t is std_logic_vector(1 downto 0);
   constant POS : lvl_t := "10";
@@ -97,6 +102,7 @@ begin
             if ct = (3 * H) / 2 and lvl /= sync_lvl then
               state <= HUNT;  -- second half of the sync is missing, not a real sync
             elsif ct = 3 * H - 1 then
+              -- end of the sync, first data bit starts next clock
               state <= BITS;
               ph    <= 0;
               bit_i <= 0;
@@ -123,6 +129,7 @@ begin
             if ph = 2 * H - 1 then
               ph <= 0;
               if bit_i = 16 then
+                -- bit 16 is the parity bit, so the word is done
                 par := '0';
                 for i in 0 to 16 loop
                   par := par xor sr(i);

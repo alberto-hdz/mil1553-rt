@@ -1,3 +1,4 @@
+"""Encoder tests: random words through the reference model, and back-to-back words with no gap."""
 import random
 
 import cocotb

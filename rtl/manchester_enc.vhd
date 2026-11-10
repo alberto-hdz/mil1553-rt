@@ -1,3 +1,9 @@
+-- manchester_enc.vhd
+-- Manchester II encoder for my 1553 RT. Takes a 16-bit word, builds the 40
+-- half-bit pattern (3 us sync, data MSB first, odd parity) and shifts it out
+-- at 1 Mbps. The holding register lets the next word start on the same clock
+-- the current one ends, since words in a 1553 message have to be back to back.
+
 library ieee;
 use ieee.std_logic_1164.all;
 

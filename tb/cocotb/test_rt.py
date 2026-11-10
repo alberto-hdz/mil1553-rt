@@ -1,3 +1,4 @@
+"""System tests for rt_top. My bus controller model (bc.py) sends messages and checks every response."""
 import random
 
 import cocotb

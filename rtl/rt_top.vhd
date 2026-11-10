@@ -1,3 +1,7 @@
+-- rt_top.vhd
+-- Top level: decoder -> protocol core -> encoder, with the subaddress RAM on
+-- the side.
+
 library ieee;
 use ieee.std_logic_1164.all;
 

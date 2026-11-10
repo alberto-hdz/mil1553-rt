@@ -1,3 +1,4 @@
+"""Decoder tests: clean, jittered and off-rate traffic, plus parity, Manchester and idle-noise checks."""
 import random
 
 import cocotb
@@ -5,37 +6,7 @@ from cocotb.clock import Clock
 from cocotb.triggers import RisingEdge, Timer
 
 import m1553
-
-HALF_PS = 500_000  # 0.5 us per half bit at 1 Mbps
-
-
-async def send(dut, half, half_ps=HALF_PS, offsets=None):
-    """Bus controller transmitter. Drives half-bit levels onto rx_p/rx_n.
-    offsets[i] (ps) moves the edge at the start of half bit i away from its ideal time."""
-    t = 0
-    for i, level in enumerate(half):
-        target = i * half_ps + (offsets[i] if offsets and i else 0)
-        if target > t:
-            await Timer(target - t, units="ps")
-            t = target
-        dut.rx_p.value = level
-        dut.rx_n.value = 1 - level
-    await Timer(len(half) * half_ps - t, units="ps")
-
-
-async def idle(dut, us):
-    """Bus idle: both lines low."""
-    dut.rx_p.value = 0
-    dut.rx_n.value = 0
-    await Timer(us, units="us")
-
-
-def message(cmd, data_words):
-    """Command word followed by contiguous data words, as half-bit levels."""
-    half = m1553.encode(cmd, True)
-    for w in data_words:
-        half += m1553.encode(w, False)
-    return half
+from bc import HALF_PS, idle, message, send
 
 
 async def collect(dut, out):
